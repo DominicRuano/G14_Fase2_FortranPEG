@@ -36,11 +36,11 @@ export class Union extends Node {
 }
     
 export class Expresion extends Node {
-    constructor(expr, label, quiantifier) {
+    constructor(expr, label, quantifier) {
         super();
         this.expr = expr;
 		this.label = label;
-		this.quiantifier = quiantifier;
+		this.quantifier = quantifier;
     }
 
     accept(visitor) {
