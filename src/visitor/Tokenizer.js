@@ -18,7 +18,7 @@ function nextSym(input, cursor) result(lexeme)
         return
     end if
 
-    ${grammar.map((produccion) => produccion.accept(this)).join('\n')}
+    ${grammar[0].accept(this)}
 
     print *, "error lexico en col ", cursor, ', "'//input(cursor:cursor)//'"'
     lexeme = "ERROR"
@@ -31,10 +31,10 @@ end module tokenizer
         return node.expr.accept(this);
     }
     visitOpciones(node) {
-        return node.exprs[0].accept(this);
+        return node.exprs.map((node) => node.accept(this)).join('\n');
     }
     visitUnion(node) {
-        return node.exprs[0].accept(this);
+        return node.exprs.map((node) => node.accept(this)).join('\n');
     }
     visitExpresion(node) {
         return node.expr.accept(this);
@@ -43,7 +43,7 @@ end module tokenizer
         return `
     if ("${node.val}" == input(cursor:cursor + ${
             node.val.length - 1
-        })) then !Foo
+        })) then !${node.val}
         allocate( character(len=${node.val.length}) :: lexeme)
         lexeme = input(cursor:cursor + ${node.val.length - 1})
         cursor = cursor + ${node.val.length}
