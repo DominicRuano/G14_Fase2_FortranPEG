@@ -285,7 +285,7 @@ function peg$parse(input, options) {
   var peg$f2 = function(exprs, rest) { return new n.Opciones([exprs, ...rest]); };
   var peg$f3 = function(exprs, rest) { return new n.Union([exprs, ...rest]); };
   var peg$f4 = function(label, expr, quantifier) {return new n.Expresion(expr,label,quantifier); };
-  var peg$f5 = function(id) { usos.push(id) };
+  var peg$f5 = function(id) { usos.push(id); return id; };
   var peg$f6 = function(val, isCase) {return new n.String(val.replace(/['"]/g, ''), isCase);};
   var peg$f7 = function(contenido) {
         return `Entrada válida: [${input}]`;
