@@ -47,7 +47,7 @@ expresion
 varios 
     = ("!"/"&"/"$")
 
-expresiones  =  id:identificador { usos.push(id); return new n.Indetificador(id); }
+expresiones  =  id:identificador { usos.push(id); return id; }
     / val:$literales isCase:"i"?
     {return new n.String(val.replace(/['"]/g, ''), isCase);}
     / "(" _ @opciones _ ")" 
