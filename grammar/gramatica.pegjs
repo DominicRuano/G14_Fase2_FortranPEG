@@ -20,7 +20,7 @@ gramatica = _ prod:producciones+ _ {
     // Validar que todos los usos están en ids
     let noEncontrados = usos.filter(item => !ids.includes(item));
     if (noEncontrados.length > 0) {
-        errores.push(new ErrorReglas("Regla no encontrada: " + noEncontrados[0]));
+        errores.push(new ErrorReglas("Regla/s no encontrada/s: " + noEncontrados.join(", ")));
     }
     return prod
 }

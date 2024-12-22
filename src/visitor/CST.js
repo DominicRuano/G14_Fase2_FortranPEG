@@ -59,4 +59,3 @@ export class String extends Node {
         return visitor.visitString(this);
     }
 }
-    
