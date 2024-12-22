@@ -1,6 +1,7 @@
 import Visitor from './Visitor.js';
 
 var lista = [];
+var generados = [];
 
 export default class Tokenizer extends Visitor {
     generateTokenizer(grammar) {
@@ -37,16 +38,21 @@ end module tokenizer
         return node.exprs.map((node) => node.accept(this)).join('\n');
     }
     visitUnion(node) {
-        return node.exprs.map((node) => node.accept(this)).join('\n');
-    }
+        return node.exprs
+            .map((node) => node.accept(this))
+            .filter(line => line !== undefined) // Filtra las líneas vacías
+            .join('\n');
+    }    
     visitExpresion(node) {
         // esto sirve para poder concatenar ids de producciones
         if ( typeof node.expr === 'string') { 
             // si find encuentra algo, returna el resultado de la produccion
-            // si no retorna el console pero ese caso no deberia pasar nunca porque 
-            // esa validacion ya se hace antes.
-            return lista.find(prod => prod.id === node.expr).expr.accept(this) || 
-                console.log(`No se encontró una producción con id: ${node.expr}`) && null;
+            var id = lista.find(prod => prod.id === node.expr);
+            if  (!generados.includes(id)) {
+                generados.push(id);
+                return id.expr.accept(this);
+            }
+            return;
         }
         // si no es un id de produccion es un string y va por aqui.
         return node.expr.accept(this);
