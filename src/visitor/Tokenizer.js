@@ -1,72 +1,60 @@
 import Visitor from './Visitor.js';
-
-var lista = [];
-var generados = [];
+import { Rango } from './CST.js';
+import { generateCaracteres } from './utils.js';
 
 export default class Tokenizer extends Visitor {
-    generateTokenizer(grammar) {
-        lista = [...grammar];
-        return `
-module tokenizer
-implicit none
-
-contains
-function nextSym(input, cursor) result(lexeme)
-    character(len=*), intent(in) :: input
-    integer, intent(inout) :: cursor
-    character(len=:), allocatable :: lexeme
-
-    if (cursor > len(input)) then
-        allocate( character(len=3) :: lexeme )
-        lexeme = "EOF"
-        return
-    end if
-
-    ${grammar[0].accept(this)}
-
-    print *, "error lexico en col ", cursor, ', "'//input(cursor:cursor)//'"'
-    lexeme = "ERROR"
-end function nextSym
-end module tokenizer 
-        `;
-    }
-
     visitProducciones(node) {
         return node.expr.accept(this);
     }
     visitOpciones(node) {
-        return node.exprs.map((node) => node.accept(this)).join('\n');
+        return node.exprs
+            .map((expr) => expr.accept(this))
+            .filter((str) => str)
+            .join('\n');
     }
     visitUnion(node) {
         return node.exprs
-            .map((node) => node.accept(this))
-            .filter(line => line !== undefined) // Filtra las líneas vacías
+            .map((expr) => expr.accept(this))
+            .filter((str) => str)
             .join('\n');
-    }    
+    }
     visitExpresion(node) {
-        // esto sirve para poder concatenar ids de producciones
-        if ( typeof node.expr === 'string') { 
-            // si find encuentra algo, returna el resultado de la produccion
-            var id = lista.find(prod => prod.id === node.expr);
-            if  (!generados.includes(id)) {
-                generados.push(id);
-                return id.expr.accept(this);
-            }
-            return;
-        }
-        // si no es un id de produccion es un string y va por aqui.
         return node.expr.accept(this);
     }
     visitString(node) {
         return `
-    if ("${node.val}" == input(cursor:cursor + ${
-            node.val.length - 1
-        })) then !${node.val}
+    if ("${node.val}" == input(cursor:cursor + ${node.val.length - 1})) then
         allocate( character(len=${node.val.length}) :: lexeme)
         lexeme = input(cursor:cursor + ${node.val.length - 1})
         cursor = cursor + ${node.val.length}
         return
     end if
     `;
+    }
+    visitClase(node) {
+        return `
+    i = cursor
+    ${generateCaracteres(node.chars.filter((node) => typeof node === 'string'))}
+    ${node.chars
+        .filter((node) => node instanceof Rango)
+        .map((range) => range.accept(this))
+        .join('\n')}`;
+    }
+    visitRango(node) {
+        return `
+    if (input(i:i) >= "${node.bottom}" .and. input(i:i) <= "${node.top}") then
+        lexeme = input(cursor:i)
+        cursor = i + 1
+        return
+    end if`;
+    }
+    visitIdentificador(node) {
+        return '';
+    }
+    visitPunto(node) {
+        return '';
+    }
+    visitFin(node) {
+        return '';
     }
 }

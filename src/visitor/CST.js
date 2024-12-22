@@ -59,3 +59,61 @@ export class String extends Node {
         return visitor.visitString(this);
     }
 }
+    
+export class Rango extends Node {
+    constructor(inicio, fin) {
+        super();
+        this.inicio = inicio;
+		this.fin = fin;
+    }
+
+    accept(visitor) {
+        return visitor.visitRango(this);
+    }
+}
+    
+export class Clase extends Node {
+    constructor(chars, isCase) {
+        super();
+        this.chars = chars;
+		this.isCase = isCase;
+    }
+
+    accept(visitor) {
+        return visitor.visitClase(this);
+    }
+}
+    
+export class Identificador extends Node {
+    constructor(id) {
+        super();
+        this.id = id;
+    }
+
+    accept(visitor) {
+        return visitor.visitIdentificador(this);
+    }
+}
+    
+export class Punto extends Node {
+    constructor() {
+        super();
+        
+    }
+
+    accept(visitor) {
+        return visitor.visitPunto(this);
+    }
+}
+    
+export class Fin extends Node {
+    constructor() {
+        super();
+        
+    }
+
+    accept(visitor) {
+        return visitor.visitFin(this);
+    }
+}
+    

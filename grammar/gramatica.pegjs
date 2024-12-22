@@ -41,19 +41,19 @@ union
     { return new n.Union([exprs, ...rest]); }
 
 expresion  
-    = ("@")? _ id:$(@identificador _ ":")? _ varios? _ expr:expresiones _ quantifier:$([?+*]/conteo)?
+    = ("@")? _ id:(identificador _ ":")? _ varios? _ expr:expresiones _ quantifier:$([?+*]/conteo)?
         {return new n.Expresion(expr,id,quantifier); }
 
 varios 
     = ("!"/"&"/"$")
 
-expresiones  =  id:identificador { usos.push(id); return id; }
+expresiones  =  id:identificador { usos.push(id); return new n.Indetificador(id); }
     / val:$literales isCase:"i"?
     {return new n.String(val.replace(/['"]/g, ''), isCase);}
-    / "(" _ val:opciones _ ")" { return val; }
-    / corchetes "i"?
-    / "."
-    / "!."
+    / "(" _ @opciones _ ")" 
+    / chars:clase isCase:"i"?   {return new n.Clase(chars,isCase)}
+    / "."   {return new n.Punto()}
+    / "!."  {return new n.Fin()}
 
 // conteo = "|" parteconteo _ (_ delimitador )? _ "|"
 
@@ -69,6 +69,13 @@ conteo = "|" _ (numero / id:identificador) _ "|"
 // delimitador =  "," _ expresion
 
 // Regla principal que analiza corchetes con contenido
+clase 
+    = "[" @contenidoClase+ "]"
+
+contenidoClase
+    = bottom:$caracter "-" top:$caracter    {return new n.Rango(bottom,top)}
+    / $caracter
+
 corchetes
     = "[" contenido:(rango / texto)+ "]" {
         return `Entrada válida: [${input}]`;
@@ -86,7 +93,8 @@ rango
 
 // Regla para caracteres individuales
 caracter
-    = [a-zA-Z0-9_ ] { return text()}
+    = [^\[\]\\]
+    / "\\" .
 
 // Coincide con cualquier contenido que no incluya "]"
 contenido

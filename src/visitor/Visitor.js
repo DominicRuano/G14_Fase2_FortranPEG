@@ -9,4 +9,14 @@ export default class Visitor {
     }
 	visitString(node){
     }
+	visitRango(node){
+    }
+	visitClase(node){
+    }
+	visitIdentificador(node){
+    }
+	visitPunto(node){
+    }
+	visitFin(node){
+    }
 }
