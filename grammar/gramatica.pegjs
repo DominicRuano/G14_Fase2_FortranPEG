@@ -41,14 +41,11 @@ union
     { return new n.Union([exprs, ...rest]); }
 
 expresion  
-    = label:$(etiqueta/varios)? _ expr:expresiones _ quantifier:$([?+*]/conteo)?
-    {return new n.Expresion(expr,label,quantifier); }
-
-etiqueta 
-    = ("@")? _ id:identificador _ ":" (varios)?
+    = ("@")? _ id:$(@identificador _ ":")? _ varios? _ expr:expresiones _ quantifier:$([?+*]/conteo)?
+        {return new n.Expresion(expr,id,quantifier); }
 
 varios 
-    = ("!"/"$"/"@"/"&")
+    = ("!"/"&"/"$")
 
 expresiones  =  id:identificador { usos.push(id); return id; }
     / val:$literales isCase:"i"?
@@ -73,7 +70,7 @@ conteo = "|" _ (numero / id:identificador) _ "|"
 
 // Regla principal que analiza corchetes con contenido
 corchetes
-    = "[" contenido:(rango / contenido)+ "]" {
+    = "[" contenido:(rango / texto)+ "]" {
         return `Entrada válida: [${input}]`;
     }
 
@@ -99,7 +96,7 @@ corchete
     = "[" contenido "]"
 
 texto
-    = [^\[\]]+
+    = [^\[\]]
 
 literales 
     = '"' @stringDobleComilla* '"'
@@ -109,12 +106,11 @@ literales
 stringDobleComilla 
     = !('"' / "\\" / finLinea) .
     / "\\" escape
-    / continuacionLinea
+
 
 stringSimpleComilla 
     = !("'" / "\\" / finLinea) .
     / "\\" escape
-    / continuacionLinea
 
 continuacionLinea = "\\" secuenciaFinLinea
 
