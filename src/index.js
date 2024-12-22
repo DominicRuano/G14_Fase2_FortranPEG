@@ -91,27 +91,50 @@ editor.onDidChangeModelContent(() => {
 
 let downloadHappening = false;
 const button = document.getElementById('BotonDescarga');
-button.addEventListener('click', () => {
-    if (downloadHappening) return;
+
+button.addEventListener('click', (event) => {
+    event.preventDefault(); // Evita que el navegador intente usar el href del botón
+
+    if (downloadHappening) return; // Evita múltiples descargas simultáneas
+    console.log('Descargando');
+    downloadHappening = true;
+
     if (!cst) {
-        alert('Escribe una gramatica valida');
+        alert('Escribe una gramática válida');
+        downloadHappening = false;
         return;
     }
+
     let url;
     generateTokenizer(cst)
         .then((fileContents) => {
+            if (!fileContents) {
+                throw new Error("El contenido del archivo es vacío.");
+            }
+
+            // Crear un Blob con el contenido generado
             const blob = new Blob([fileContents], { type: 'text/plain' });
             url = URL.createObjectURL(blob);
-            button.href = url;
-            downloadHappening = true;
-            button.click();
+
+            // Crear un enlace temporal para descargar el archivo
+            const tempLink = document.createElement('a');
+            tempLink.href = url;
+            tempLink.download = 'tokenizer.f90'; // Nombre del archivo descargado
+            document.body.appendChild(tempLink);
+            tempLink.click(); // Forzar la descarga
+            document.body.removeChild(tempLink); // Limpia el enlace temporal
+
+            // Liberar la URL después de la descarga
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        })
+        .catch((error) => {
+            console.error("Error al generar el archivo:", error);
         })
         .finally(() => {
-            URL.revokeObjectURL(url);
-            button.href = '#';
-            downloadHappening = false;
+            downloadHappening = false; // Marcar que terminó el proceso
         });
 });
+
 
 // CSS personalizado para resaltar el error y agregar un warning
 const style = document.createElement('style');
