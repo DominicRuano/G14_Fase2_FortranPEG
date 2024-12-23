@@ -6,6 +6,9 @@ export default class Tokenizer extends Visitor {
         super();
         this.lista = []; 
         this.generados = []; 
+        
+        // Se usa si de declara un "{.}" en la gramática en distintas producciones
+        this.STRgenerados = []; 
     }
 
     generateTokenizer(grammar) {
@@ -48,14 +51,10 @@ end module parser
     }
 
     visitProducciones(node) {
-        console.log("here in visitProducciones");
-        console.log(node);
         return node.expr.accept(this, node.alias);
     }
 
     visitOpciones(node, alias) {
-        console.log("here in visitOpciones");
-        console.log(node);
         return node.exprs
             .map((expr) => expr.accept(this, alias))
             .filter((str) => str) 
@@ -63,8 +62,6 @@ end module parser
     }
 
     visitUnion(node, alias) {
-        console.log("here in visitUnion");
-        console.log(node);
         return node.exprs
         .map((expr) => expr.accept(this, alias))
         .filter((str) => str)
@@ -72,56 +69,51 @@ end module parser
     }
     
     visitExpresion(node, alias) {
-        console.log("here in visitExpresion");
-        console.log(node);
         if (typeof node.expr === 'string') {
             const id = this.lista.find((prod) => prod.id === node.expr);
             if (id && !this.generados.includes(id)) {
                 this.generados.push(id);
-                console.log("AAAAa");
-                console.log(id);
                 return id.expr.accept(this, id.alias);
             }
             return ''; 
         }
-        return node.expr.accept(this, alias); 
+
+        if ( node.expr.constructor.name === "String" && 
+                this.STRgenerados.includes(node.expr.val) ) return '';
+
+        return node.expr.accept(this, alias);
     }
     
     visitString(node, alias) {
+        this.STRgenerados.push(node.val);
+
         return `
-        if ("${node.val}" == input(cursor:cursor + ${node.val.length - 1})) then
+    if ("${node.val}" == input(cursor:cursor + ${node.val.length - 1})) then
         allocate( character(len=${node.val.length}) :: lexeme)
         lexeme = input(cursor:cursor + ${node.val.length - 1}) ${ alias ? `// " - ${alias}"` : '' }
         cursor = cursor + ${node.val.length}
         return
-        end if
-        `;
+    end if
+`;
     }
     
     visitClase(node, alias) {
-        console.log("here in visitClase");
-        console.log(node);
         return `
         i = cursor
         ${this.generateCaracteres(node.chars.filter((char) => typeof char === 'string'), alias)}
         ${node.chars
             .filter((char) => char instanceof Rango)
             .map((range) => range.accept(this, alias))
-            .join('\n')}
-            `;
-        }
-        
+            .join('\n')}`;
+}
+
     visitRango(node, alias) {
-        console.log("here in visitRango");
-        console.log(node);
-        console.log(alias);
         return `
         if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
         lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
         cursor = i + 1
         return
-        end if
-        `;
+        end if`;
     }
     
     visitIdentificador(node) {
@@ -137,9 +129,6 @@ end module parser
     }
     
     generateCaracteres(chars, alias) {
-        console.log("here in generateCaracteres");
-        console.log(chars);
-        console.log(alias);
         if (chars.length === 0) return '';
         
         // No mover, luego no sabemos que hace una funcion, luego se refactoriza
