@@ -48,81 +48,98 @@ end module parser
     }
 
     visitProducciones(node) {
-        return node.expr.accept(this);
+        console.log("here in visitProducciones");
+        console.log(node);
+        return node.expr.accept(this, node.alias);
     }
 
-    visitOpciones(node) {
+    visitOpciones(node, alias) {
+        console.log("here in visitOpciones");
+        console.log(node);
         return node.exprs
-            .map((expr) => expr.accept(this))
+            .map((expr) => expr.accept(this, alias))
             .filter((str) => str) 
             .join('\n');
     }
 
-    visitUnion(node) {
+    visitUnion(node, alias) {
+        console.log("here in visitUnion");
+        console.log(node);
         return node.exprs
-            .map((expr) => expr.accept(this))
-            .filter((str) => str)
-            .join('\n');
+        .map((expr) => expr.accept(this, alias))
+        .filter((str) => str)
+        .join('\n');
     }
-
-    visitExpresion(node) {
+    
+    visitExpresion(node, alias) {
+        console.log("here in visitExpresion");
+        console.log(node);
         if (typeof node.expr === 'string') {
             const id = this.lista.find((prod) => prod.id === node.expr);
             if (id && !this.generados.includes(id)) {
                 this.generados.push(id);
-                return id.expr.accept(this);
+                console.log("AAAAa");
+                console.log(id);
+                return id.expr.accept(this, id.alias);
             }
             return ''; 
         }
-        return node.expr.accept(this); 
+        return node.expr.accept(this, alias); 
     }
-
-    visitString(node) {
+    
+    visitString(node, alias) {
         return `
-    if ("${node.val}" == input(cursor:cursor + ${node.val.length - 1})) then
+        if ("${node.val}" == input(cursor:cursor + ${node.val.length - 1})) then
         allocate( character(len=${node.val.length}) :: lexeme)
-        lexeme = input(cursor:cursor + ${node.val.length - 1})
+        lexeme = input(cursor:cursor + ${node.val.length - 1}) ${ alias ? `// " - ${alias}"` : '' }
         cursor = cursor + ${node.val.length}
         return
-    end if
+        end if
         `;
     }
-
-    visitClase(node) {
-        return `
-    i = cursor
-    ${this.generateCaracteres(node.chars.filter((char) => typeof char === 'string'))}
-    ${node.chars
-        .filter((char) => char instanceof Rango)
-        .map((range) => range.accept(this))
-        .join('\n')}
-        `;
-    }
-
-    visitRango(node) {
+    
+    visitClase(node, alias) {
+        console.log("here in visitClase");
         console.log(node);
         return `
-    if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
-        lexeme = input(cursor:i)
+        i = cursor
+        ${this.generateCaracteres(node.chars.filter((char) => typeof char === 'string'), alias)}
+        ${node.chars
+            .filter((char) => char instanceof Rango)
+            .map((range) => range.accept(this, alias))
+            .join('\n')}
+            `;
+        }
+        
+    visitRango(node, alias) {
+        console.log("here in visitRango");
+        console.log(node);
+        console.log(alias);
+        return `
+        if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
+        lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
         cursor = i + 1
         return
-    end if
+        end if
         `;
     }
-
+    
     visitIdentificador(node) {
         return ''; 
     }
-
+    
     visitPunto(node) {
         return ''; 
     }
-
+    
     visitFin(node) {
         return ''; 
     }
-
-    generateCaracteres(chars) {
+    
+    generateCaracteres(chars, alias) {
+        console.log("here in generateCaracteres");
+        console.log(chars);
+        console.log(alias);
         if (chars.length === 0) return '';
         
         // No mover, luego no sabemos que hace una funcion, luego se refactoriza
@@ -141,7 +158,7 @@ end module parser
     
         return `
         if (findloc([character(len=1) :: ${fortranChars.join(', ')}], input(i:i), 1) > 0) then
-            lexeme = input(cursor:i)
+            lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
             cursor = i + 1
             return
         end if

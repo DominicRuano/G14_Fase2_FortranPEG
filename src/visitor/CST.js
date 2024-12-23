@@ -19,8 +19,8 @@ export class Opciones extends Node {
         this.exprs = exprs;
     }
 
-    accept(visitor) {
-        return visitor.visitOpciones(this);
+    accept(visitor, alias) {
+        return visitor.visitOpciones(this, alias);
     }
 }
     
@@ -30,8 +30,8 @@ export class Union extends Node {
         this.exprs = exprs;
     }
 
-    accept(visitor) {
-        return visitor.visitUnion(this);
+    accept(visitor, alias) {
+        return visitor.visitUnion(this, alias);
     }
 }
     
@@ -43,8 +43,8 @@ export class Expresion extends Node {
 		this.quantifier = quantifier;
     }
 
-    accept(visitor) {
-        return visitor.visitExpresion(this);
+    accept(visitor, alias) {
+        return visitor.visitExpresion(this, alias);
     }
 }
     
@@ -55,8 +55,8 @@ export class String extends Node {
 		this.isCase = isCase;
     }
 
-    accept(visitor) {
-        return visitor.visitString(this);
+    accept(visitor, alias) {
+        return visitor.visitString(this, alias);
     }
 }
     
@@ -67,8 +67,8 @@ export class Rango extends Node {
 		this.fin = fin;
     }
 
-    accept(visitor) {
-        return visitor.visitRango(this);
+    accept(visitor, alias) {
+        return visitor.visitRango(this, alias);
     }
 }
     
@@ -79,8 +79,8 @@ export class Clase extends Node {
 		this.isCase = isCase;
     }
 
-    accept(visitor) {
-        return visitor.visitClase(this);
+    accept(visitor, alias) {
+        return visitor.visitClase(this, alias);
     }
 }
     

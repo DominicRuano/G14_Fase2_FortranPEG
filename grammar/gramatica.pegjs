@@ -29,7 +29,7 @@ producciones
     = _ id:identificador _ alias:(literales)? _ "=" _ expr:opciones (_";")? 
         { 
             ids.push(id);
-            return new n.Producciones(id,expr,alias);
+            return new n.Producciones(id,expr, alias?.map(a => a[1]).join('') || '');   
         }
 
 opciones 
