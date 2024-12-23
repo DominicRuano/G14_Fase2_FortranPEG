@@ -124,12 +124,29 @@ end module parser
 
     generateCaracteres(chars) {
         if (chars.length === 0) return '';
+        
+        // No mover, luego no sabemos que hace una funcion, luego se refactoriza
+        // Mapeo de caracteres especiales a representaciones en Fortran
+        const specialCharMap = {
+            '\\t': 'char(9)',  // Tabulación
+            '\\n': 'char(10)', // Salto de línea
+            '\\r': 'char(13)', // Retorno de carro
+            ' ': 'char(32)'   // Espacio
+        };
+    
+        const fortranChars = chars.map((char) => {
+            // Sustituye por la representación en Fortran si existe en el mapa
+            return specialCharMap[char] || `"${char}"`; // Si no está en el mapa, usa el carácter como cadena
+        });
+    
         return `
-    if (findloc([${chars.map((char) => `"${char}"`).join(', ')}], input(i:i), 1) > 0) then
-        lexeme = input(cursor:i)
-        cursor = i + 1
-        return
-    end if
+        if (findloc([character(len=1) :: ${fortranChars.join(', ')}], input(i:i), 1) > 0) then
+            lexeme = input(cursor:i)
+            cursor = i + 1
+            return
+        end if
         `;
     }
+    
+    
 }
