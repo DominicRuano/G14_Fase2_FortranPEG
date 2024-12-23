@@ -69,6 +69,7 @@ end module parser
     }
 
     visitProducciones(node) {
+        console.log(node);
         return node.expr.accept(this, node.alias);
     }
 
@@ -143,11 +144,22 @@ end module parser
         ${this.generateCaracteres(node.chars.filter((char) => typeof char === 'string'), alias)}
         ${node.chars
             .filter((char) => char instanceof Rango)
-            .map((range) => range.accept(this, alias))
+            .map((range) => range.accept(this, alias, node.isCase))
             .join('\n')}`;
 }
 
-    visitRango(node, alias) {
+    visitRango(node, alias, isCase) {
+        console.log(node);
+
+        if ( isCase ){
+            return `
+    if (toLowerCase(input(i:i)) >= toLowerCase("${node.inicio}") .and. toLowerCase(input(i:i)) <= toLowerCase("${node.fin}")) then
+        lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
+        cursor = i + 1
+        return
+    end if`;
+        }
+
         return `
     if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
         lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
