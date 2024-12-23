@@ -89,8 +89,9 @@ end module tokenizer
     }
 
     visitRango(node) {
+        console.log(node);
         return `
-    if (input(i:i) >= "${node.bottom}" .and. input(i:i) <= "${node.top}") then
+    if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
         lexeme = input(cursor:i)
         cursor = i + 1
         return
