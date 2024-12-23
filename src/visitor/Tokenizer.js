@@ -62,6 +62,19 @@ end module parser
     }
 
     visitUnion(node, alias) {
+        console.log(node);
+        
+        // loop para unir las expresiones
+        node.exprs.forEach((Statement, index) => {
+            if (Statement.expr.constructor.name === "String" && typeof Statement.expr === 'object' &&  index < node.exprs.length - 1 &&
+                typeof node.exprs[index + 1].expr === 'object' && node.exprs[index + 1].expr.constructor.name === "String") {
+                    Statement.expr.val += node.exprs[index + 1].expr.val;
+                    node.exprs.splice(index + 1, 1);
+                };
+            });
+        
+        console.log(node);
+
         return node.exprs
         .map((expr) => expr.accept(this, alias))
         .filter((str) => str)
@@ -109,11 +122,11 @@ end module parser
 
     visitRango(node, alias) {
         return `
-        if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
+    if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
         lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
         cursor = i + 1
         return
-        end if`;
+    end if`;
     }
     
     visitIdentificador(node) {
@@ -146,11 +159,11 @@ end module parser
         });
     
         return `
-        if (findloc([character(len=1) :: ${fortranChars.join(', ')}], input(i:i), 1) > 0) then
-            lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
-            cursor = i + 1
-            return
-        end if
+    if (findloc([character(len=1) :: ${fortranChars.join(', ')}], input(i:i), 1) > 0) then
+        lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
+        cursor = i + 1
+        return
+    end if
         `;
     }
     
