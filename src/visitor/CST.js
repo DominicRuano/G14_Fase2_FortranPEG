@@ -67,8 +67,8 @@ export class Rango extends Node {
 		this.fin = fin;
     }
 
-    accept(visitor, alias) {
-        return visitor.visitRango(this, alias);
+    accept(visitor, alias, isCase) {
+        return visitor.visitRango(this, alias, isCase);
     }
 }
     
