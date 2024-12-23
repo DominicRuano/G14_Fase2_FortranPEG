@@ -27,7 +27,7 @@ function nextSym(input, cursor) result(lexeme)
         return
     end if
 
-    ${grammar.map((produccion) => produccion.accept(this)).join('\n')}
+    ${grammar[0].accept(this)}
 
     print *, "error lexico en col ", cursor, ', "'//input(cursor:cursor)//'"'
     lexeme = "ERROR"

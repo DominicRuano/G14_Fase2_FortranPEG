@@ -1,6 +1,7 @@
 import * as monaco from 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/+esm';
-import { parse } from '../src/parser/gramatica.js';
-import Tokenizer from '../src/visitor/Tokenizer.js';
+import { parse } from './parser/gramatica.js';
+import Tokenizer from './visitor/Tokenizer.js';
+import { ErrorReglas } from './parser/error.js';
 
 export let ids = [];
 export let usos = [];
@@ -18,6 +19,7 @@ const editor = monaco.editor.create(document.getElementById('editor'), {
 const salida = monaco.editor.create(document.getElementById('salida'), {
     value: '',
     language: 'java',
+    readOnly: true,
     automaticLayout: true,
 });
 
@@ -29,34 +31,63 @@ const analizar = () => {
     ids.length = 0;
     usos.length = 0;
     errores.length = 0;
-
-    const mensaje = document.getElementById('mensaje');
-
     try {
         const cst = parse(entrada);
 
         if (errores.length > 0) {
-            mensaje.textContent = `Error: ${errores[0].message}`;
-            mensaje.className = 'bg-red-500 text-white text-lg font-semibold mt-4 inline-block px-4 py-2 rounded';
+            salida.setValue(`Error: ${errores[0].message}`);
+            return;
         } else {
-            mensaje.textContent = 'Parser built successfully.';
-            mensaje.className = 'bg-green-500 text-white text-lg font-semibold mt-4 inline-block px-4 py-2 rounded';
+            salida.setValue('Análisis Exitoso');
         }
 
-        // Generar archivo Fortran si el análisis es exitoso
+        // salida.setValue("Análisis Exitoso");
+        // Limpiar decoraciones previas si la validación es exitosa
+        decorations = editor.deltaDecorations(decorations, []);
+
         const tokenizer = new Tokenizer();
         const fileContents = tokenizer.generateTokenizer(cst);
         const blob = new Blob([fileContents], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const button = document.getElementById('BotonDescarga');
         button.href = url;
-
     } catch (e) {
-        mensaje.textContent = `Error: ${e.message}`;
-        mensaje.className = 'bg-red-500 text-white text-lg font-semibold mt-4 inline-block px-4 py-2 rounded';
+        if (e.location === undefined) {
+            salida.setValue(`Error: ${e.message}`);
+        } else {
+            // Mostrar mensaje de error en el editor de salida
+            salida.setValue(
+                `Error: ${e.message}\nEn línea ${e.location.start.line} columna ${e.location.start.column}`
+            );
+
+            // Resaltar el error en el editor de entrada
+            decorations = editor.deltaDecorations(decorations, [
+                {
+                    range: new monaco.Range(
+                        e.location.start.line,
+                        e.location.start.column,
+                        e.location.start.line,
+                        e.location.start.column + 1
+                    ),
+                    options: {
+                        inlineClassName: 'errorHighlight', // Clase CSS personalizada para cambiar color de letra
+                    },
+                },
+                {
+                    range: new monaco.Range(
+                        e.location.start.line,
+                        e.location.start.column,
+                        e.location.start.line,
+                        e.location.start.column
+                    ),
+                    options: {
+                        glyphMarginClassName: 'warningGlyph', // Clase CSS para mostrar un warning en el margen
+                    },
+                },
+            ]);
+        }
     }
 };
-
 
 // Escuchar cambios en el contenido del editor
 editor.onDidChangeModelContent(() => {

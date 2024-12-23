@@ -44,49 +44,50 @@
         Generador de parser para Fortran
       </h1>
     </header>
-    <div class="text-center">
-      <a
-      id="BotonDescarga"
-      download="tokenizer.f90"
-      class="py-2 px-4 bg-fort text-white font-bold text-xl rounded-lg"
-      >
-      Descargar modulo fortran
-      </a>
-  </div>
+
     <!-- CONTENT -->
     <div class="flex flex-row w-full mt-10 h-5/6">
-        <!-- EDITOR DE TEXTO -->
-        <section class="h-full w-full">
+      <!-- EDITOR DE TEXTO -->
+      <section class="h-full w-full">
         <h2
-            class="text-lg font-semibold text-center bg-fort text-white rounded-t-lg"
-            style="width: 93%"
+          class="text-lg font-semibold text-center bg-fort text-white rounded-t-lg"
+          style="width: 93%"
         >
-        Write your Peggy grammar
+          Escribe tu gramatica
         </h2>
         <div
           id="editor"
           class="border border-gray-500"
           style="height: 92%; width: 93%"
         ></div>
-        <section id="mensaje" class="text-center text-lg font-bold mt-4"></section>
       </section>
 
       <!-- SALIDA -->
       <section class="h-full w-full flex flex-col">
         <h2
-            class="text-lg font-semibold text-center bg-fort text-white rounded-t-lg ml-auto"
-            style="width: 93%"
+          class="text-lg font-semibold text-center bg-fort text-white rounded-t-lg ml-auto"
+          style="width: 93%"
         >
-            Test the generated parser with some input
+            Salida
         </h2>
             <div
             id="salida"
             class="ml-auto border border-gray-500"
             style="height: 92%; width: 93%"
             ></div>
-            
         </section>
     </div>
-        <script type="module" src="./src/index.js"></script>
+
+    <div class="text-center">
+        <a
+        id="BotonDescarga"
+        download="tokenizer.f90"
+        class="py-2 px-4 bg-fort text-white font-bold text-xl rounded-lg"
+        >
+        Descargar modulo fortran
+        </a>
+    </div>
+
+        <script type="module" src="src/index.js"></script>
     </body>
 </html>
