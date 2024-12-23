@@ -1,6 +1,6 @@
 import * as monaco from 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/+esm';
-import { parse } from './parser/gramatica.js';
-import { generateTokenizer } from './visitor/utils.js';
+import { parse } from '../src/parser/gramatica.js';
+import Tokenizer from '../src/visitor/Tokenizer.js';
 
 export let ids = [];
 export let usos = [];
@@ -18,123 +18,50 @@ const editor = monaco.editor.create(document.getElementById('editor'), {
 const salida = monaco.editor.create(document.getElementById('salida'), {
     value: '',
     language: 'java',
-    readOnly: true,
     automaticLayout: true,
 });
 
 let decorations = [];
 
 // Analizar contenido del editor
-let cst;
 const analizar = () => {
     const entrada = editor.getValue();
     ids.length = 0;
     usos.length = 0;
     errores.length = 0;
+
+    const mensaje = document.getElementById('mensaje');
+
     try {
-        cst = parse(entrada);
+        const cst = parse(entrada);
 
         if (errores.length > 0) {
-            salida.setValue(`Error: ${errores[0].message}`);
-            cst = null;
-            return;
+            mensaje.textContent = `Error: ${errores[0].message}`;
+            mensaje.className = 'bg-red-500 text-white text-lg font-semibold mt-4 inline-block px-4 py-2 rounded';
         } else {
-            salida.setValue('Análisis Exitoso');
+            mensaje.textContent = 'Parser built successfully.';
+            mensaje.className = 'bg-green-500 text-white text-lg font-semibold mt-4 inline-block px-4 py-2 rounded';
         }
 
-        // salida.setValue("Análisis Exitoso");
-        // Limpiar decoraciones previas si la validación es exitosa
-        decorations = editor.deltaDecorations(decorations, []);
+        // Generar archivo Fortran si el análisis es exitoso
+        const tokenizer = new Tokenizer();
+        const fileContents = tokenizer.generateTokenizer(cst);
+        const blob = new Blob([fileContents], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const button = document.getElementById('BotonDescarga');
+        button.href = url;
+
     } catch (e) {
-        cst = null;
-        if (e.location === undefined) {
-            salida.setValue(`Error: ${e.message}`);
-        } else {
-            // Mostrar mensaje de error en el editor de salida
-            salida.setValue(
-                `Error: ${e.message}\nEn línea ${e.location.start.line} columna ${e.location.start.column}`
-            );
-
-            // Resaltar el error en el editor de entrada
-            decorations = editor.deltaDecorations(decorations, [
-                {
-                    range: new monaco.Range(
-                        e.location.start.line,
-                        e.location.start.column,
-                        e.location.start.line,
-                        e.location.start.column + 1
-                    ),
-                    options: {
-                        inlineClassName: 'errorHighlight', // Clase CSS personalizada para cambiar color de letra
-                    },
-                },
-                {
-                    range: new monaco.Range(
-                        e.location.start.line,
-                        e.location.start.column,
-                        e.location.start.line,
-                        e.location.start.column
-                    ),
-                    options: {
-                        glyphMarginClassName: 'warningGlyph', // Clase CSS para mostrar un warning en el margen
-                    },
-                },
-            ]);
-        }
+        mensaje.textContent = `Error: ${e.message}`;
+        mensaje.className = 'bg-red-500 text-white text-lg font-semibold mt-4 inline-block px-4 py-2 rounded';
     }
 };
+
 
 // Escuchar cambios en el contenido del editor
 editor.onDidChangeModelContent(() => {
     analizar();
 });
-
-let downloadHappening = false;
-const button = document.getElementById('BotonDescarga');
-
-button.addEventListener('click', (event) => {
-    event.preventDefault(); // Evita que el navegador intente usar el href del botón
-
-    if (downloadHappening) return; // Evita múltiples descargas simultáneas
-    console.log('Descargando');
-    downloadHappening = true;
-
-    if (!cst) {
-        alert('Escribe una gramática válida');
-        downloadHappening = false;
-        return;
-    }
-
-    let url;
-    generateTokenizer(cst)
-        .then((fileContents) => {
-            if (!fileContents) {
-                throw new Error("El contenido del archivo es vacío.");
-            }
-
-            // Crear un Blob con el contenido generado
-            const blob = new Blob([fileContents], { type: 'text/plain' });
-            url = URL.createObjectURL(blob);
-
-            // Crear un enlace temporal para descargar el archivo
-            const tempLink = document.createElement('a');
-            tempLink.href = url;
-            tempLink.download = 'tokenizer.f90'; // Nombre del archivo descargado
-            document.body.appendChild(tempLink);
-            tempLink.click(); // Forzar la descarga
-            document.body.removeChild(tempLink); // Limpia el enlace temporal
-
-            // Liberar la URL después de la descarga
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        })
-        .catch((error) => {
-            console.error("Error al generar el archivo:", error);
-        })
-        .finally(() => {
-            downloadHappening = false; // Marcar que terminó el proceso
-        });
-});
-
 
 // CSS personalizado para resaltar el error y agregar un warning
 const style = document.createElement('style');
