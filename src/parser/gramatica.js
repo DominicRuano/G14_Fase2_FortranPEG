@@ -280,7 +280,7 @@ function peg$parse(input, options) {
 };
   var peg$f1 = function(id, alias, expr) { 
             ids.push(id);
-            return new n.Producciones(id,expr,alias);
+            return new n.Producciones(id,expr, alias?.map(a => a[1]).join('') || '');   
         };
   var peg$f2 = function(exprs, rest) { return new n.Opciones([exprs, ...rest]); };
   var peg$f3 = function(exprs, rest) { return new n.Union([exprs, ...rest]); };

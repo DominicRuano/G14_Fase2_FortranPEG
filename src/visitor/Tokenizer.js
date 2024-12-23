@@ -6,15 +6,28 @@ export default class Tokenizer extends Visitor {
         super();
         this.lista = []; 
         this.generados = []; 
+        
+        // Se usa si de declara un "{.}" en la gramática en distintas producciones
+        this.STRgenerados = []; 
     }
 
     generateTokenizer(grammar) {
         this.lista = [...grammar];
         return `
-module tokenizer
+module parser
 implicit none
 
 contains
+
+subroutine parse(input)
+    character(len=:), allocatable :: lexeme, input
+    integer :: cursor = 1
+    do while (lexeme /= "EOF" .and. lexeme /= "ERROR")
+        lexeme = nextSym(input, cursor)
+        print *, lexeme
+    end do
+end subroutine parse
+
 function nextSym(input, cursor) result(lexeme)
     character(len=*), intent(in) :: input
     integer, intent(inout) :: cursor
@@ -32,93 +45,114 @@ function nextSym(input, cursor) result(lexeme)
     print *, "error lexico en col ", cursor, ', "'//input(cursor:cursor)//'"'
     lexeme = "ERROR"
 end function nextSym
-end module tokenizer 
+
+end module parser 
         `;
     }
 
     visitProducciones(node) {
-        return node.expr.accept(this);
+        return node.expr.accept(this, node.alias);
     }
 
-    visitOpciones(node) {
+    visitOpciones(node, alias) {
         return node.exprs
-            .map((expr) => expr.accept(this))
+            .map((expr) => expr.accept(this, alias))
             .filter((str) => str) 
             .join('\n');
     }
 
-    visitUnion(node) {
+    visitUnion(node, alias) {
         return node.exprs
-            .map((expr) => expr.accept(this))
-            .filter((str) => str)
-            .join('\n');
+        .map((expr) => expr.accept(this, alias))
+        .filter((str) => str)
+        .join('\n');
     }
-
-    visitExpresion(node) {
+    
+    visitExpresion(node, alias) {
         if (typeof node.expr === 'string') {
             const id = this.lista.find((prod) => prod.id === node.expr);
             if (id && !this.generados.includes(id)) {
                 this.generados.push(id);
-                return id.expr.accept(this);
+                return id.expr.accept(this, id.alias);
             }
             return ''; 
         }
-        return node.expr.accept(this); 
-    }
 
-    visitString(node) {
+        if ( node.expr.constructor.name === "String" && 
+                this.STRgenerados.includes(node.expr.val) ) return '';
+
+        return node.expr.accept(this, alias);
+    }
+    
+    visitString(node, alias) {
+        this.STRgenerados.push(node.val);
+
         return `
     if ("${node.val}" == input(cursor:cursor + ${node.val.length - 1})) then
         allocate( character(len=${node.val.length}) :: lexeme)
-        lexeme = input(cursor:cursor + ${node.val.length - 1})
+        lexeme = input(cursor:cursor + ${node.val.length - 1}) ${ alias ? `// " - ${alias}"` : '' }
         cursor = cursor + ${node.val.length}
         return
     end if
-        `;
+`;
     }
-
-    visitClase(node) {
+    
+    visitClase(node, alias) {
         return `
-    i = cursor
-    ${this.generateCaracteres(node.chars.filter((char) => typeof char === 'string'))}
-    ${node.chars
-        .filter((char) => char instanceof Rango)
-        .map((range) => range.accept(this))
-        .join('\n')}
-        `;
-    }
+        i = cursor
+        ${this.generateCaracteres(node.chars.filter((char) => typeof char === 'string'), alias)}
+        ${node.chars
+            .filter((char) => char instanceof Rango)
+            .map((range) => range.accept(this, alias))
+            .join('\n')}`;
+}
 
-    visitRango(node) {
-        console.log(node);
+    visitRango(node, alias) {
         return `
-    if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
-        lexeme = input(cursor:i)
+        if (input(i:i) >= "${node.inicio}" .and. input(i:i) <= "${node.fin}") then
+        lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
         cursor = i + 1
         return
-    end if
-        `;
+        end if`;
     }
-
+    
     visitIdentificador(node) {
         return ''; 
     }
-
+    
     visitPunto(node) {
         return ''; 
     }
-
+    
     visitFin(node) {
         return ''; 
     }
-
-    generateCaracteres(chars) {
+    
+    generateCaracteres(chars, alias) {
         if (chars.length === 0) return '';
+        
+        // No mover, luego no sabemos que hace una funcion, luego se refactoriza
+        // Mapeo de caracteres especiales a representaciones en Fortran
+        const specialCharMap = {
+            '\\t': 'char(9)',  // Tabulación
+            '\\n': 'char(10)', // Salto de línea
+            '\\r': 'char(13)', // Retorno de carro
+            ' ': 'char(32)'   // Espacio
+        };
+    
+        const fortranChars = chars.map((char) => {
+            // Sustituye por la representación en Fortran si existe en el mapa
+            return specialCharMap[char] || `"${char}"`; // Si no está en el mapa, usa el carácter como cadena
+        });
+    
         return `
-    if (findloc([${chars.map((char) => `"${char}"`).join(', ')}], input(i:i), 1) > 0) then
-        lexeme = input(cursor:i)
-        cursor = i + 1
-        return
-    end if
+        if (findloc([character(len=1) :: ${fortranChars.join(', ')}], input(i:i), 1) > 0) then
+            lexeme = input(cursor:i) ${ alias ? `// " - ${alias}"` : '' }
+            cursor = i + 1
+            return
+        end if
         `;
     }
+    
+    
 }
